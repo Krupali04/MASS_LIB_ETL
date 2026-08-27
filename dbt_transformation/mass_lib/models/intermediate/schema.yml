@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  - name: int_circulation
+    description: >
+      Staging plus two additions: a stable library_id that survives the 2023
+      renames, and derived columns that MBLC never published.
+      Still one row per library per year. 2,208 rows.
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - library_id
+              - fiscal_year
+
+    columns:
+      - name: library_id
+        description: >
+          Hash of the library's current name. Stable across renames, so
+          Goodwin Memorial (2020-2022) and Hadley Public (2023-2025) share
+          one ID.
+        data_tests: [not_null]
+
+      - name: canonical_location
+        description: Current name. Renamed libraries show their new name in all years.
+        data_tests: [not_null]
+
+      - name: location_as_published
+        description: What the file actually said that year, kept for reference.
+
+      - name: service_population
+        description: >
+          Library population where available, municipal population for 2020.
+          The denominator used by circ_per_capita_recomputed.
+        data_tests: [not_null]
+
+      - name: print_circ
+        description: Print books plus print serials.
+
+      - name: physical_media_circ
+        description: Physical audio plus physical video.
+
+      - name: digital_circ
+        description: Ebooks, downloadable audio, downloadable video, electronic format.
+
+      - name: annual_hours_open
+        description: >
+          Recovered, not published. total_circ_activity divided by
+          circ_per_hour_open_published gives back the hours MBLC divided by.
+
+      - name: staff_fte
+        description: >
+          Recovered, not published. total_circ_activity divided by
+          circ_per_fte_published. MBLC computes FTE as hours worked / 35.
+
+      - name: circ_per_capita_recomputed
+        description: >
+          Our version. MBLC switched the denominator from municipal to library
+          population in 2021, so their published figure is not comparable across
+          all six years. This one uses the same basis every year.
+
+      - name: circ_per_capita_published
+        description: >
+          MBLC's own figure, unchanged. Kept alongside ours so the two can be
+          compared when someone checks against the published report.
+
+      - name: reconciliation_gap
+        description: >
+          direct_circ minus (print books + non-print). Should be zero. A large
+          gap means the library reported a total without itemising it by format.

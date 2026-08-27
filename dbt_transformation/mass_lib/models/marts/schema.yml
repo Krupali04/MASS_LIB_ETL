@@ -1,0 +1,78 @@
+version: 2
+
+models:
+  - name: dim_library
+    description: One row per library. 372 rows.
+    columns:
+      - name: library_id
+        description: Stable across renames. Join key for the fact tables.
+        data_tests:
+          - unique
+          - not_null
+      - name: location
+        data_tests: [unique, not_null]
+      - name: town_name
+        data_tests: [not_null]
+      - name: network_code
+        data_tests: [not_null]
+      - name: years_reported
+        description: 6 for most libraries, 3 for the two that closed in 2023.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6]
+                quote: false
+
+  - name: fct_library_year
+    description: One row per library per year. 2,208 rows.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - library_id
+              - fiscal_year
+    columns:
+      - name: library_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_library')
+                field: library_id
+      - name: fiscal_year
+        data_tests: [not_null]
+      - name: digital_share
+        description: Digital circulation divided by total. Between 0 and 1.
+
+  - name: fct_circulation
+    description: One row per library per year per format. About 22,080 rows.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - library_id
+              - fiscal_year
+              - format_code
+    columns:
+      - name: library_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_library')
+                field: library_id
+      - name: format_code
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  ['print_books', 'print_serials', 'physical_audio',
+                   'physical_video', 'ebook', 'downloadable_audio',
+                   'downloadable_video', 'electronic_format',
+                   'microform', 'misc']
+      - name: format_group
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['print', 'physical_media', 'digital', 'other']

@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: stg_circulation
+    description: >
+      All six years of MBLC circulation data, cleaned and stacked.
+      One row per library per year. Summary rows removed.
+
+    # a library should appear only once per year
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - location_raw
+            - fiscal_year
+
+    columns:
+      - name: fiscal_year
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [2020, 2021, 2022, 2023, 2024, 2025]
+              quote: false
+
+      - name: location_raw
+        data_tests: [not_null]
+
+      - name: town_name
+        data_tests: [not_null]
+
+      - name: library_name
+        data_tests: [not_null]
+
+      - name: network_code
+        description: Uppercased, so MASSCAT and MassCat are the same value.
+        data_tests:
+          - not_null
+          - accepted_values:
+              values:
+                ['C/WMARS', 'CLAMS', 'MASSCAT', 'MBLN', 'MLN', 'MVLC',
+                 'NOBLE', 'OCLN', 'SAILS', 'NOT A NETWORK']
+
+      - name: municipal_population
+        data_tests: [not_null]
+
+      - name: municipal_population_group
+        data_tests:
+          - accepted_values:
+              values: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+      - name: library_population
+        description: NULL for 2020 - MBLC did not publish it until 2021.
+
+      - name: electronic_collection_usage
+        description: NULL for 2025 - MBLC dropped the measure that year.
