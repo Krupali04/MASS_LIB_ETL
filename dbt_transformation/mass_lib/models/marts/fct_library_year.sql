@@ -2,8 +2,10 @@
 
 -- One row per library per year. 2,208 rows.
 --
--- This is the "what happened" table - only numbers, plus the keys needed to
--- join back to dim_library. Names and towns live in dim_library, not here.
+-- The "what happened" table - numbers only, plus the keys to join back to
+-- dim_library and dim_year. Names and towns live in dim_library, not here.
+--
+-- No BigQuery-specific changes were needed in this model.
 
 select
     -- keys
@@ -24,7 +26,7 @@ select
     -- ---------- resource sharing ----------
     ill_received,
     ill_provided,
-    ill_provided - ill_received        as net_ill,
+    ill_provided - ill_received            as net_ill,
     nonresident_circ,
 
     -- ---------- by material type ----------
@@ -47,7 +49,7 @@ select
 
     -- ---------- capacity (recovered, not published) ----------
     annual_hours_open,
-    round(annual_hours_open / 52, 1)   as weekly_hours_open,
+    round(annual_hours_open / 52, 1)       as weekly_hours_open,
     staff_fte,
     noncustodial_fte,
     round(staff_fte - noncustodial_fte, 2) as custodial_fte,
@@ -73,6 +75,6 @@ select
 
     -- ---------- data quality ----------
     reconciliation_gap,
-    case when direct_circ is null then false else true end as is_reported
+    direct_circ is not null                as is_reported
 
 from {{ ref('int_circulation') }}

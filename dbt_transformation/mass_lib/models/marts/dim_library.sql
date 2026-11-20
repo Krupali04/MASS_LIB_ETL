@@ -2,12 +2,12 @@
 
 -- One row per library. 372 rows.
 --
--- This is the "who" table. It answers questions about a library itself -
--- what it's called, where it is, which network, is it still open - without
--- repeating that text on all six of its yearly rows.
+-- The "who" table. Answers questions about a library itself - what it's
+-- called, where it is, which network, is it still open - without repeating
+-- that text on all six of its yearly rows.
 --
--- Attributes are taken from the library's MOST RECENT year, because names,
--- networks and population groups change over time and you want today's answer.
+-- Attributes come from the library's MOST RECENT year, because names,
+-- networks and population groups change and you want today's answer.
 
 with ranked as (
 
@@ -37,6 +37,12 @@ history as (
     from {{ ref('int_circulation') }}
     group by 1
 
+),
+
+final_year as (
+
+    select max(fiscal_year) as max_year from {{ ref('int_circulation') }}
+
 )
 
 select
@@ -60,11 +66,11 @@ select
 
     -- a library that stopped reporting before the final year has closed.
     -- W. Acton Citizens' and Northfield's Field Library both closed in 2023.
-    case when h.last_year_reported = (select max(fiscal_year) from {{ ref('int_circulation') }})
-         then true else false end as is_active,
+    h.last_year_reported = f.max_year as is_active,
 
     -- 15 towns have more than one library, which matters for per-capita
     count(*) over (partition by l.town_name) as libraries_in_town
 
 from latest l
 join history h on l.library_id = h.library_id
+cross join final_year f

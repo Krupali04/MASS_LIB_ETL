@@ -2,17 +2,17 @@
 
 -- Adds two things staging deliberately left out:
 --   1. a stable library_id that survives the 2023 renames
---   2. derived columns (things MBLC did not publish, that we calculate)
+--   2. derived columns that MBLC never published
 --
--- Still one row per library per year. Same 2,208 rows as staging.
+-- Still one row per library per year. 2,208 rows.
 
 with renamed as (
 
     select
         s.*,
-        -- if this library was renamed later, use its current name instead.
-        -- that way Goodwin Memorial (2020-2022) and Hadley Public (2023-2025)
-        -- are recognised as the same library.
+        -- if this library was renamed later, use its current name instead,
+        -- so Goodwin Memorial (2020-2022) and Hadley Public (2023-2025) are
+        -- recognised as the same library.
         coalesce(r.current_location, s.location_raw) as canonical_location
     from {{ ref('stg_circulation') }} s
     left join {{ ref('seed_library_renames') }} r
@@ -26,9 +26,9 @@ select
 
     fiscal_year,
     canonical_location,
-    location_raw            as location_as_published,
-    split_part(canonical_location, ' - ', 1)  as town_name,
-    split_part(canonical_location, ' - ', 2)  as library_name,
+    location_raw                                       as location_as_published,
+    split(canonical_location, ' - ')[safe_offset(0)]   as town_name,
+    split(canonical_location, ' - ')[safe_offset(1)]   as library_name,
     network_code,
     is_networked,
 

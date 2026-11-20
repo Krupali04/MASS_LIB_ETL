@@ -2,12 +2,23 @@ version: 2
 
 sources:
   - name: source
-    database: library
-    schema: source  
+    description: >
+      Raw MBLC circulation files, one table per fiscal year, loaded from CSV
+      with every column as STRING. Summary rows and the 'No data' sentinel are
+      still present - cleaning happens in staging, not here.
+    database: mass-library      # <-- your GCP project id, e.g. mass-library-473812
+    schema: source                 # the BigQuery dataset name
+
     tables:
-      - name: circulation_data_2020
-      - name: circulation_data_2021
-      - name: circulation_data_2022
-      - name: circulation_data_2023
-      - name: circulation_data_2024
-      - name: circulation_data_2025
+      - name: circulation_2020
+        description: FY2020. No library_population - MBLC added it in 2021.
+      - name: circulation_2021
+        description: FY2021. library_population appears; per-capita denominator changes.
+      - name: circulation_2022
+        description: FY2022.
+      - name: circulation_2023
+        description: FY2023. Three libraries renamed, two closed.
+      - name: circulation_2024
+        description: FY2024.
+      - name: circulation_2025
+        description: FY2025. No electronic_collection_usage. 'No data' sentinel appears.

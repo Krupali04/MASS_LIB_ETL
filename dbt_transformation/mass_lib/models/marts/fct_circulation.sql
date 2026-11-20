@@ -7,9 +7,9 @@
 --   wide  ->  library | year | print_books | ebooks | dvds
 --   long  ->  library | year | format      | circulation
 --
--- Why bother? Charting a format mix is one GROUP BY instead of ten CASE
--- statements, and adding a new format later means adding a row here rather
--- than changing every chart.
+-- Charting a format mix becomes one GROUP BY instead of ten CASE statements.
+--
+-- No BigQuery-specific changes were needed in this model.
 
 {% set formats = [
     ('print_books',        'print',          'print_books_circ'),
@@ -50,7 +50,7 @@ select
     circulation,
 
     -- NULL means the library did not report this format.
-    -- 0 means it reported zero. Those are different things, so keep a flag.
-    case when circulation is null then false else true end as is_reported
+    -- 0 means it reported zero. Those are different, so keep a flag.
+    circulation is not null as is_reported
 
 from unpivoted

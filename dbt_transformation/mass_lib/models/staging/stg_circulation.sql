@@ -3,257 +3,38 @@
 -- Cleans and combines all six years of raw circulation data.
 -- Should return 2,208 rows (369+369+369+367+367+367).
 --
--- The six raw tables are NOT the same shape, so every column is listed by name:
---   * 2020 has no LIBRARY_POPULATION / LIBRARY_POPULATION_GROUP  (added in 2021)
---   * 2025 has no electronic collection usage column             (dropped in 2025)
---   * 2024 has Excel working notes baked into three column names
--- Missing columns are filled with NULL so all six branches line up.
---
--- QUOTED NAMES: when the files loaded, Snowflake uppercased most column names
--- but left five exactly as they were in Excel. Those need "double quotes" and
--- must match character-for-character - including the two spaces in
--- "Total  Circulation" and the two before "=L5" in the 2024 FTE column.
+-- This used to be ~150 lines of per-year column lists, because the six
+-- Snowflake tables each had different column names. The CSVs are now
+-- generated with one identical header, so a plain "select *" union works
+-- and every year is handled the same way.
 
+{% set years = [2020, 2021, 2022, 2023, 2024, 2025] %}
+
+
+-- STEP 1: stack the six year tables.
+-- If a future year has different columns this fails loudly, which is correct.
 with all_years as (
 
-    select
-        '2020'                                            as fiscal_year,
-
-        LOCATION                                      as location_raw,
-        LIBRARY_NETWORK                               as network_code,
-        MUNICIPAL_POPULATION                          as municipal_population,
-        MUNICIPAL_POPULATION_GROUP                    as municipal_population_group,
-        cast(null as varchar)                         as library_population,
-        cast(null as varchar)                         as library_population_group,
-        TOTAL_CIRC_PER_CAPITA                         as circ_per_capita_published,
-        TOTAL_CIRC_PER_HOUR_OPEN                      as circ_per_hour_open_published,
-        TOTAL_CIRC_PER_FTE                            as circ_per_fte_published,
-        "Total Circulation per Non-Custodial FTE"     as circ_per_noncustodial_fte_published,
-        DIRECT_CIRC                                   as direct_circ,
-        TOTAL_CIRC_ACTIVITY                           as total_circ_activity,
-        TOTAL_ELECTRONIC_COLLECTION_USAGE             as electronic_collection_usage,
-        ILL_RECEIVED                                  as ill_received,
-        ILL_PROVIDED                                  as ill_provided,
-        TOTAL_NONRESIDENT_CIRCULATION                 as nonresident_circ,
-        TOTAL_PRINT_BOOKS_CIRCULATION                 as print_books_circ,
-        "Total print periodicals, newspapers & other print serials circulation"
-                                                      as print_serials_circ,
-        TOTAL_PHYSICAL_AUDIO_CIRCULATION              as physical_audio_circ,
-        TOTAL_PHYSICAL_VIDEO_CIRCULATION              as physical_video_circ,
-        TOTAL_EBOOKS_CIRCULATION                      as ebook_circ,
-        TOTAL_DOWNLOADABLE_AUDIO_CIRCULATION          as downloadable_audio_circ,
-        TOTAL_DOWNLOADABLE_VIDEO_CIRCULATION          as downloadable_video_circ,
-        TOTAL_MATERIALS_IN_ELECTRONIC_FORMAT_CIRCULATION
-                                                      as electronic_format_circ,
-        MATERIALS_IN_MICROFORMS_CIRCULATED            as microform_circ,
-        "Miscellaneous (e.g. Museum Passes, ebook readers, game consoles, cake pans, kits, wireless hotspots, framed art prints)"
-                                                      as misc_circ,
-        "Total non-print circulation"                 as nonprint_circ,
-        "Total  Circulation (Print + NonPrint)"       as total_circ_published
-    from {{ source('source', 'circulation_data_2020') }}
-
+{% for year in years %}
+    select * from {{ source('source', 'circulation_' ~ year) }}
+    {%- if not loop.last %}
     union all
-
-    select
-        '2021'                                            as fiscal_year,
-
-        LOCATION                                      as location_raw,
-        LIBRARY_NETWORK                               as network_code,
-        MUNICIPAL_POPULATION                          as municipal_population,
-        MUNICIPAL_POPULATION_GROUP                    as municipal_population_group,
-        LIBRARY_POPULATION                            as library_population,
-        LIBRARY_POPULATION_GROUP                      as library_population_group,
-        TOTAL_CIRC_PER_CAPITA                         as circ_per_capita_published,
-        TOTAL_CIRC_PER_HOUR_OPEN                      as circ_per_hour_open_published,
-        TOTAL_CIRC_PER_FTE                            as circ_per_fte_published,
-        "Total Circulation per Non-Custodial FTE"     as circ_per_noncustodial_fte_published,
-        DIRECT_CIRC                                   as direct_circ,
-        TOTAL_CIRC_ACTIVITY                           as total_circ_activity,
-        TOTAL_ELECTRONIC_COLLECTION_USAGE             as electronic_collection_usage,
-        ILL_RECEIVED                                  as ill_received,
-        ILL_PROVIDED                                  as ill_provided,
-        TOTAL_NONRESIDENT_CIRCULATION                 as nonresident_circ,
-        TOTAL_PRINT_BOOKS_CIRCULATION                 as print_books_circ,
-        "Total print periodicals, newspapers & other print serials circulation"
-                                                      as print_serials_circ,
-        TOTAL_PHYSICAL_AUDIO_CIRCULATION              as physical_audio_circ,
-        TOTAL_PHYSICAL_VIDEO_CIRCULATION              as physical_video_circ,
-        TOTAL_EBOOKS_CIRCULATION                      as ebook_circ,
-        TOTAL_DOWNLOADABLE_AUDIO_CIRCULATION          as downloadable_audio_circ,
-        TOTAL_DOWNLOADABLE_VIDEO_CIRCULATION          as downloadable_video_circ,
-        TOTAL_MATERIALS_IN_ELECTRONIC_FORMAT_CIRCULATION
-                                                      as electronic_format_circ,
-        MATERIALS_IN_MICROFORMS_CIRCULATED            as microform_circ,
-        "Miscellaneous (e.g. Museum Passes, ebook readers, game consoles, cake pans, kits, wireless hotspots, framed art prints)"
-                                                      as misc_circ,
-        "Total non-print circulation"                 as nonprint_circ,
-        "Total  Circulation (Print + NonPrint)"       as total_circ_published
-    from {{ source('source', 'circulation_data_2021') }}
-
-    union all
-
-    select
-        '2022'                                            as fiscal_year,
-
-        LOCATION                                      as location_raw,
-        LIBRARY_NETWORK                               as network_code,
-        MUNICIPAL_POPULATION                          as municipal_population,
-        MUNICIPAL_POPULATION_GROUP                    as municipal_population_group,
-        LIBRARY_POPULATION                            as library_population,
-        LIBRARY_POPULATION_GROUP                      as library_population_group,
-        TOTAL_CIRC_PER_CAPITA                         as circ_per_capita_published,
-        TOTAL_CIRC_PER_HOUR_OPEN                      as circ_per_hour_open_published,
-        TOTAL_CIRC_PER_FTE                            as circ_per_fte_published,
-        "Total Circulation per Non-Custodial FTE"     as circ_per_noncustodial_fte_published,
-        DIRECT_CIRC                                   as direct_circ,
-        TOTAL_CIRC_ACTIVITY                           as total_circ_activity,
-        TOTAL_ELECTRONIC_COLLECTION_USAGE             as electronic_collection_usage,
-        ILL_RECEIVED                                  as ill_received,
-        ILL_PROVIDED                                  as ill_provided,
-        TOTAL_NONRESIDENT_CIRCULATION                 as nonresident_circ,
-        TOTAL_PRINT_BOOKS_CIRCULATION                 as print_books_circ,
-        "Total print periodicals, newspapers & other print serials circulation"
-                                                      as print_serials_circ,
-        TOTAL_PHYSICAL_AUDIO_CIRCULATION              as physical_audio_circ,
-        TOTAL_PHYSICAL_VIDEO_CIRCULATION              as physical_video_circ,
-        TOTAL_EBOOKS_CIRCULATION                      as ebook_circ,
-        TOTAL_DOWNLOADABLE_AUDIO_CIRCULATION          as downloadable_audio_circ,
-        TOTAL_DOWNLOADABLE_VIDEO_CIRCULATION          as downloadable_video_circ,
-        TOTAL_MATERIALS_IN_ELECTRONIC_FORMAT_CIRCULATION
-                                                      as electronic_format_circ,
-        MATERIALS_IN_MICROFORMS_CIRCULATED            as microform_circ,
-        "Miscellaneous (e.g. Museum Passes, ebook readers, game consoles, cake pans, kits, wireless hotspots, framed art prints)"
-                                                      as misc_circ,
-        "Total non-print circulation"                 as nonprint_circ,
-        "Total  Circulation (Print + NonPrint)"       as total_circ_published
-    from {{ source('source', 'circulation_data_2022') }}
-
-    union all
-
-    select
-        '2023'                                            as fiscal_year,
-
-        LOCATION                                      as location_raw,
-        LIBRARY_NETWORK                               as network_code,
-        MUNICIPAL_POPULATION                          as municipal_population,
-        MUNICIPAL_POPULATION_GROUP                    as municipal_population_group,
-        LIBRARY_POPULATION                            as library_population,
-        LIBRARY_POPULATION_GROUP                      as library_population_group,
-        TOTAL_CIRC_PER_CAPITA                         as circ_per_capita_published,
-        TOTAL_CIRC_PER_HOUR_OPEN                      as circ_per_hour_open_published,
-        TOTAL_CIRC_PER_FTE                            as circ_per_fte_published,
-        "Total Circulation per Non-Custodial FTE"     as circ_per_noncustodial_fte_published,
-        DIRECT_CIRC                                   as direct_circ,
-        TOTAL_CIRC_ACTIVITY                           as total_circ_activity,
-        TOTAL_ELECTRONIC_COLLECTION_USAGE             as electronic_collection_usage,
-        ILL_RECEIVED                                  as ill_received,
-        ILL_PROVIDED                                  as ill_provided,
-        TOTAL_NONRESIDENT_CIRCULATION                 as nonresident_circ,
-        TOTAL_PRINT_BOOKS_CIRCULATION                 as print_books_circ,
-        "Total print periodicals, newspapers & other print serials circulation"
-                                                      as print_serials_circ,
-        TOTAL_PHYSICAL_AUDIO_CIRCULATION              as physical_audio_circ,
-        TOTAL_PHYSICAL_VIDEO_CIRCULATION              as physical_video_circ,
-        TOTAL_EBOOKS_CIRCULATION                      as ebook_circ,
-        TOTAL_DOWNLOADABLE_AUDIO_CIRCULATION          as downloadable_audio_circ,
-        TOTAL_DOWNLOADABLE_VIDEO_CIRCULATION          as downloadable_video_circ,
-        TOTAL_MATERIALS_IN_ELECTRONIC_FORMAT_CIRCULATION
-                                                      as electronic_format_circ,
-        MATERIALS_IN_MICROFORMS_CIRCULATED            as microform_circ,
-        "Miscellaneous (e.g. Museum Passes, ebook readers, game consoles, cake pans, kits, wireless hotspots, framed art prints)"
-                                                      as misc_circ,
-        "Total non-print circulation"                 as nonprint_circ,
-        "Total  Circulation (Print + NonPrint)"       as total_circ_published
-    from {{ source('source', 'circulation_data_2023') }}
-
-    union all
-
-    select
-        '2024'                                            as fiscal_year,
-
-        LOCATION                                      as location_raw,
-        LIBRARY_NETWORK                               as network_code,
-        MUNICIPAL_POPULATION                          as municipal_population,
-        MUNICIPAL_POPULATION_GROUP                    as municipal_population_group,
-        LIBRARY_POPULATION                            as library_population,
-        LIBRARY_POPULATION_GROUP                      as library_population_group,
-        TOTAL_CIRC_PER_CAPITA                         as circ_per_capita_published,
-        TOTAL_CIRC_PER_HOUR_OPEN                      as circ_per_hour_open_published,
-        "Total Circ per FTE =L5/(AG5/35)"             as circ_per_fte_published,
-        "Total Circulation per Non-Custodial FTE  =L5/(AG5-AI5/35)"
-                                                      as circ_per_noncustodial_fte_published,
-        DIRECT_CIRC                                   as direct_circ,
-        TOTAL_CIRC_ACTIVITY                           as total_circ_activity,
-        TOTAL_ELECTRONIC_COLLECTION_USAGE_C37_NOT_C4  as electronic_collection_usage,
-        ILL_RECEIVED                                  as ill_received,
-        ILL_PROVIDED                                  as ill_provided,
-        TOTAL_NONRESIDENT_CIRCULATION                 as nonresident_circ,
-        TOTAL_PRINT_BOOKS_CIRCULATION                 as print_books_circ,
-        "Total print periodicals, newspapers & other print serials circulation"
-                                                      as print_serials_circ,
-        TOTAL_PHYSICAL_AUDIO_CIRCULATION              as physical_audio_circ,
-        TOTAL_PHYSICAL_VIDEO_CIRCULATION              as physical_video_circ,
-        TOTAL_EBOOKS_CIRCULATION                      as ebook_circ,
-        TOTAL_DOWNLOADABLE_AUDIO_CIRCULATION          as downloadable_audio_circ,
-        TOTAL_DOWNLOADABLE_VIDEO_CIRCULATION          as downloadable_video_circ,
-        TOTAL_MATERIALS_IN_ELECTRONIC_FORMAT_CIRCULATION
-                                                      as electronic_format_circ,
-        MATERIALS_IN_MICROFORMS_CIRCULATED            as microform_circ,
-        "Miscellaneous (e.g. Museum Passes, ebook readers, game consoles, cake pans, kits, wireless hotspots, framed art prints)"
-                                                      as misc_circ,
-        "Total non-print circulation"                 as nonprint_circ,
-        "Total  Circulation (Print + NonPrint)"       as total_circ_published
-    from {{ source('source', 'circulation_data_2024') }}
-
-    union all
-
-    select
-        '2025'                                            as fiscal_year,
-
-        LOCATION                                      as location_raw,
-        LIBRARY_NETWORK                               as network_code,
-        MUNICIPAL_POPULATION                          as municipal_population,
-        MUNICIPAL_POPULATION_GROUP                    as municipal_population_group,
-        LIBRARY_POPULATION                            as library_population,
-        LIBRARY_POPULATION_GROUP                      as library_population_group,
-        TOTAL_CIRC_PER_CAPITA                         as circ_per_capita_published,
-        TOTAL_CIRC_PER_HOUR_OPEN                      as circ_per_hour_open_published,
-        TOTAL_CIRC_PER_FTE                            as circ_per_fte_published,
-        "Total Circulation per Non-Custodial FTE"     as circ_per_noncustodial_fte_published,
-        DIRECT_CIRC                                   as direct_circ,
-        TOTAL_CIRC_ACTIVITY                           as total_circ_activity,
-        cast(null as varchar)                         as electronic_collection_usage,
-        ILL_RECEIVED                                  as ill_received,
-        ILL_PROVIDED                                  as ill_provided,
-        TOTAL_NONRESIDENT_CIRCULATION                 as nonresident_circ,
-        TOTAL_PRINT_BOOKS_CIRCULATION                 as print_books_circ,
-        "Total print periodicals, newspapers & other print serials circulation"
-                                                      as print_serials_circ,
-        TOTAL_PHYSICAL_AUDIO_CIRCULATION              as physical_audio_circ,
-        TOTAL_PHYSICAL_VIDEO_CIRCULATION              as physical_video_circ,
-        TOTAL_EBOOKS_CIRCULATION                      as ebook_circ,
-        TOTAL_DOWNLOADABLE_AUDIO_CIRCULATION          as downloadable_audio_circ,
-        TOTAL_DOWNLOADABLE_VIDEO_CIRCULATION          as downloadable_video_circ,
-        TOTAL_MATERIALS_IN_ELECTRONIC_FORMAT_CIRCULATION
-                                                      as electronic_format_circ,
-        MATERIALS_IN_MICROFORMS_CIRCULATED            as microform_circ,
-        "Miscellaneous (e.g. Museum Passes, ebook readers, game consoles, cake pans, kits, wireless hotspots, framed art prints)"
-                                                      as misc_circ,
-        "Total non-print circulation"                 as nonprint_circ,
-        "Total  Circulation (Print + NonPrint)"       as total_circ_published
-    from {{ source('source', 'circulation_data_2025') }}
+    {%- endif %}
+{% endfor %}
 
 )
 
 
--- Clean it up: text to numbers, split the location, tidy the network name.
+-- STEP 2: clean it up.
 select
     {{ to_num('fiscal_year') }}                          as fiscal_year,
 
-    -- split "Abington - Abington Public Library" into two parts
+    -- split "Abington - Abington Public Library" into two parts.
+    -- BigQuery split() returns an array, so we index into it.
+    -- On Snowflake this was split_part(location_raw, ' - ', 1).
     location_raw,
-    split_part(location_raw, ' - ', 1)                   as town_name,
-    split_part(location_raw, ' - ', 2)                   as library_name,
+    split(location_raw, ' - ')[safe_offset(0)]           as town_name,
+    split(location_raw, ' - ')[safe_offset(1)]           as library_name,
 
     -- upper() fixes MASSCAT vs MassCat, which differ between years
     upper(trim(network_code))                            as network_code,
@@ -299,6 +80,6 @@ select
 
 from all_years
 
--- Drop the 5 summary rows in each file (Total, Avg, Max, Min, Median).
+-- STEP 3: drop the 5 summary rows in each file (Total, Avg, Max, Min, Median).
 -- Every real library is "Town - Library Name". Summary rows have no " - ".
 where location_raw like '% - %'

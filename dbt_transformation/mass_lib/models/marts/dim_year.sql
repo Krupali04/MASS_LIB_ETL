@@ -3,8 +3,8 @@
 -- One row per fiscal year. 6 rows.
 --
 -- Why this exists: without it, each fact table carries its own fiscal_year
--- column and Tableau treats them as two unrelated fields. A year filter on a
--- dashboard would control one chart and be ignored by the other.
+-- column and the BI tool treats them as two unrelated fields. A year filter on
+-- a dashboard would control one chart and be ignored by the other.
 --
 -- It also carries the schema-drift notes as real columns, so a caveat can
 -- appear in a tooltip instead of living in a README nobody opens.
@@ -23,7 +23,9 @@ with years as (
 
 select
     fiscal_year,
-    'FY' || fiscal_year              as fiscal_year_label,
+    -- BigQuery has no || operator for strings; on Snowflake this was
+    -- 'FY' || fiscal_year
+    concat('FY', cast(fiscal_year as string))   as fiscal_year_label,
 
     libraries_reported,
     statewide_circ_activity,
