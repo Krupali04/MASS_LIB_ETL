@@ -1,0 +1,37 @@
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Secrets / credentials
+.env
+.env.*
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+*keyfile*.json
+profiles.yml
+
+# dbt artifacts
+dbt_transformation/**/target/
+dbt_transformation/**/dbt_packages/
+dbt_transformation/**/logs/
+dbt_transformation/logs/
+.user.yml
+*.log
+
+# Raw source data — kept local, never pushed
+raw_data/
+
+# Dashboard build output and dependencies
+library-viz/node_modules/
+library-viz/dist/
+library-viz/src/.observablehq/cache/

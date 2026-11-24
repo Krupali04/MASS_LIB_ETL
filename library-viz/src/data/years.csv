@@ -1,0 +1,7 @@
+fiscal_year,fiscal_year_label,libraries_reported,percapita_denominator_basis,is_covid_affected,data_note
+2020,FY2020,369,municipal,True,Includes ~3.5 months of pandemic closure
+2021,FY2021,369,library,False,Library population column introduced; per-capita denominator changed
+2022,FY2022,369,library,False,
+2023,FY2023,367,library,False,"Three libraries renamed, two closed"
+2024,FY2024,367,library,False,
+2025,FY2025,367,library,False,Electronic collection usage dropped; total circulation derivation changed

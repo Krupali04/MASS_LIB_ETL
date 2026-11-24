@@ -1,0 +1,18 @@
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Dependencies & build output
+node_modules/
+/dist/
+src/.observablehq/cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Secrets
+.env
+.env.*
